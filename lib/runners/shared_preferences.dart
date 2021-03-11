@@ -5,7 +5,7 @@ class SharedPreferencesRunner implements BenchmarkRunner {
   SharedPreferences prefs;
 
   @override
-  String get name => 'Shared Preferences';
+  String get name => 'Shared\nPreferences';
 
   @override
   Future<void> setUp() async {
@@ -41,6 +41,17 @@ class SharedPreferencesRunner implements BenchmarkRunner {
   }
 
   @override
+  Future<int> batchReadDouble(List<String> keys) async {
+    var prefs = await SharedPreferences.getInstance();
+    var s = Stopwatch()..start();
+    for (var key in keys) {
+      prefs.getDouble(key);
+    }
+    s.stop();
+    return s.elapsedMilliseconds;
+  }
+
+  @override
   Future<int> batchWriteInt(Map<String, int> entries) async {
     var s = Stopwatch()..start();
     var prefs = await SharedPreferences.getInstance();
@@ -63,6 +74,17 @@ class SharedPreferencesRunner implements BenchmarkRunner {
   }
 
   @override
+  Future<int> batchWriteDouble(Map<String, double> entries) async {
+    var s = Stopwatch()..start();
+    var prefs = await SharedPreferences.getInstance();
+    for (var key in entries.keys) {
+      await prefs.setDouble(key, entries[key]);
+    }
+    s.stop();
+    return s.elapsedMilliseconds;
+  }
+
+  @override
   Future<int> batchDeleteInt(List<String> keys) async {
     var s = Stopwatch()..start();
     var prefs = await SharedPreferences.getInstance();
@@ -75,6 +97,11 @@ class SharedPreferencesRunner implements BenchmarkRunner {
 
   @override
   Future<int> batchDeleteString(List<String> keys) {
+    return batchDeleteInt(keys);
+  }
+
+  @override
+  Future<int> batchDeleteDouble(List<String> keys) {
     return batchDeleteInt(keys);
   }
 }

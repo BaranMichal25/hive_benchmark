@@ -1,29 +1,22 @@
 import 'dart:math';
 
 import 'package:hive_benchmark/runners/hive.dart';
-import 'package:hive_benchmark/runners/moor_ffi.dart';
 import 'package:hive_benchmark/runners/runner.dart';
 import 'package:hive_benchmark/runners/shared_preferences.dart';
-import 'package:hive_benchmark/runners/sqflite.dart';
 import 'package:random_string/random_string.dart' as randStr;
-
-const String TABLE_NAME_STR = "kv_str";
-const String TABLE_NAME_INT = "kv_int";
 
 class Result {
   final BenchmarkRunner runner;
   int intTime;
   int stringTime;
+  int doubleTime;
 
   Result(this.runner);
 }
 
 final runners = [
-  HiveRunner(false),
-  HiveRunner(true),
-  SqfliteRunner(),
+  HiveRunner(),
   SharedPreferencesRunner(),
-  MoorFfiRunner(),
 ];
 
 List<Result> _createResults() {
@@ -35,7 +28,7 @@ Map<String, int> generateIntEntries(int count) {
   var random = Random();
   for (var i = 0; i < count; i++) {
     var key = randStr.randomAlphaNumeric(randStr.randomBetween(5, 200));
-    var val = random.nextInt(1 << 32);
+    var val = random.nextInt(2 ^ 50);
     map[key] = val;
   }
   return map;
@@ -46,6 +39,17 @@ Map<String, String> generateStringEntries(int count) {
   for (var i = 0; i < count; i++) {
     var key = randStr.randomAlphaNumeric(randStr.randomBetween(5, 200));
     var val = randStr.randomString(randStr.randomBetween(5, 1000));
+    map[key] = val;
+  }
+  return map;
+}
+
+Map<String, double> generateDoubleEntries(int count) {
+  var map = Map<String, double>();
+  var random = Random();
+  for (var i = 0; i < count; i++) {
+    var key = randStr.randomAlphaNumeric(randStr.randomBetween(5, 200));
+    var val = random.nextInt(2 ^ 50) + 0.3;
     map[key] = val;
   }
   return map;
@@ -71,6 +75,14 @@ Future<List<Result>> benchmarkRead(int count) async {
     result.stringTime = await result.runner.batchReadString(stringKeys);
   }
 
+  var doubleEntries = generateDoubleEntries(count);
+  var doubleKeys = doubleEntries.keys.toList()..shuffle();
+
+  for (var result in results) {
+    await result.runner.batchWriteDouble(doubleEntries);
+    result.doubleTime = await result.runner.batchReadDouble(doubleKeys);
+  }
+
   for (var result in results) {
     await result.runner.tearDown();
   }
@@ -82,11 +94,13 @@ Future<List<Result>> benchmarkWrite(int count) async {
   final results = _createResults();
   var intEntries = generateIntEntries(count);
   var stringEntries = generateStringEntries(count);
+  var doubleEntries = generateDoubleEntries(count);
 
   for (var result in results) {
     await result.runner.setUp();
     result.intTime = await result.runner.batchWriteInt(intEntries);
     result.stringTime = await result.runner.batchWriteString(stringEntries);
+    result.doubleTime = await result.runner.batchWriteDouble(doubleEntries);
 
     await result.runner.tearDown();
   }
@@ -110,6 +124,13 @@ Future<List<Result>> benchmarkDelete(int count) async {
   for (var result in results) {
     await result.runner.batchWriteString(stringEntries);
     result.stringTime = await result.runner.batchDeleteString(stringKeys);
+  }
+
+  var doubleEntries = generateDoubleEntries(count);
+  var doubleKeys = doubleEntries.keys.toList()..shuffle();
+  for (var result in results) {
+    await result.runner.batchWriteDouble(doubleEntries);
+    result.doubleTime = await result.runner.batchDeleteDouble(doubleKeys);
   }
 
   for (var result in results) {

@@ -25,11 +25,12 @@ class _AppState extends State<App> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
+        backgroundColor: Colors.white,
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(15.0),
             child: Column(
-              children: <Widget>[
+              children: [
                 Center(
                   child: Text(
                     "Hive Benchmark",
@@ -51,8 +52,7 @@ class _AppState extends State<App> with SingleTickerProviderStateMixin {
                 ),
                 SizedBox(height: 25),
                 Expanded(
-                  child:
-                      BenchmarkWidget(BenchmarkType.values[controller.index]),
+                  child: BenchmarkWidget(BenchmarkType.values[controller.index]),
                 ),
               ],
             ),
@@ -78,6 +78,7 @@ class _BenchmarkWidgetState extends State<BenchmarkWidget> {
   static const entrySteps = [10, 20, 50, 100, 200, 500, 1000];
 
   var entryValue = 0.0;
+
   int get entries => entrySteps[entryValue.round()];
 
   var benchmarkRunning = false;
@@ -169,6 +170,7 @@ class _BenchmarkWidgetState extends State<BenchmarkWidget> {
 class BenchmarkResult extends StatelessWidget {
   final Color leftBarColor = Color(0xff53fdd7);
   final Color rightBarColor = Color(0xffff5182);
+  final Color thirdBarColor = Color(0xff51ff5a);
   final double width = 12;
 
   final List<Result> results;
@@ -187,6 +189,9 @@ class BenchmarkResult extends StatelessWidget {
       }
       if (result.stringTime > max) {
         max = result.stringTime;
+      }
+      if (result.doubleTime > max) {
+        max = result.doubleTime;
       }
     }
     return max;
@@ -211,6 +216,12 @@ class BenchmarkResult extends StatelessWidget {
             width: width,
             isRound: true,
           ),
+          BarChartRodData(
+            y: max(result.doubleTime.toDouble(), 1),
+            color: thirdBarColor,
+            width: width,
+            isRound: true,
+          ),
         ],
       );
     }).toList();
@@ -220,12 +231,12 @@ class BenchmarkResult extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
+      children: [
         SizedBox(height: 10),
         Center(
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
+            children: [
               SizedBox(
                 width: 15,
                 height: 15,
@@ -259,6 +270,24 @@ class BenchmarkResult extends StatelessWidget {
                   fontSize: 14,
                 ),
               ),
+              SizedBox(width: 10),
+              SizedBox(
+                width: 15,
+                height: 15,
+                child: Container(
+                  color: thirdBarColor,
+                ),
+              ),
+              SizedBox(width: 5),
+              Text(
+                'Doubles',
+                style: TextStyle(
+                  color: const Color(0xff7589a2),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              SizedBox(width: 10),
             ],
           ),
         ),
